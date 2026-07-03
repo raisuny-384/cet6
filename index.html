@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智能体对话</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial}
+body{height:100vh;display:flex;flex-direction:column;background:#f0f2f5}
+.chat-container{flex:1;padding:15px;overflow-y:auto}
+.user,.ai{margin:10px 0}
+.user{text-align:right}
+.user div{background:#1890ff;color:white;padding:10px 14px;border-radius:16px 16px 2px 16px;display:inline-block;max-width:80%}
+.ai div{background:#ffffff;padding:10px 14px;border-radius:16px 16px 16px 2px;box-shadow:0 1px 2px #ddd;max-width:80%}
+.bottom-bar{display:flex;padding:12px;background:white;border-top:1px solid #eee}
+#msgInput{flex:1;padding:12px;border:1px solid #ddd;border-radius:6px;outline:none}
+#sendBtn{margin-left:10px;padding:0 18px;background:#1890ff;color:white;border:none;border-radius:6px}
+</style>
+</head>
+<body>
+<div class="chat-container" id="chatBox"></div>
+<div class="bottom-bar">
+<input id="msgInput" placeholder="输入消息">
+<button id="sendBtn">发送</button>
+</div>
+
+<script>
+// 你的阿里云接口基础地址
+const baseUrl = "https://ws-f4l412d3rnh5ruwk.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/chat/completions";
+// 在这里填入你的阿里云API Key
+const apiKey = "sk-ws-H.RXEMDHR.nLc5.MEYCIQDrxTHAceFPTcKmkbEkm5k92vATUBihbQIgR0Dd1wE7hAIhAI8OG3dqUSi0UjgRHSQTffpaxPaqBXUbIN2a7coZQFK2";
+// 填入你的模型ID
+const modelId = "英语六级刷题助手";
+
+const chatBox = document.getElementById("chatBox");
+const input = document.getElementById("msgInput");
+const sendBtn = document.getElementById("sendBtn");
+
+function addMessage(role,content){
+    let wrap = document.createElement("div");
+    wrap.className = role;
+    wrap.innerHTML = `<div>${content}</div>`;
+    chatBox.appendChild(wrap);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+async function sendChat(){
+    let text = input.value.trim();
+    if(!text)return;
+    addMessage("user",text);
+    input.value = "";
+    addMessage("ai","加载中...");
+    try{
+        let res = await fetch(baseUrl,{
+            method:"POST",
+            headers:{
+                "Authorization":`Bearer ${apiKey}`,
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+                model:modelId,
+                messages:[{role:"user",content:text}]
+            })
+        })
+        let data = await res.json();
+        chatBox.lastChild.querySelector("div").innerText = data.choices[0].message.content;
+    }catch(e){
+        chatBox.lastChild.querySelector("div").innerText = "跨域请求失败，公开网页不能直接调用阿里云接口";
+    }
+}
+sendBtn.onclick = sendChat;
+input.onkeydown = e=>e.key==="Enter"&&sendChat();
+</script>
+</body>
+</html>
